@@ -55,7 +55,7 @@ Usage:
 #### Build Options
 
 - `aws_access_key` - *[required]* The AWS access key.
-- `aws_ami_name` - The AMI name (default value: "spark").
+- `aws_ami_name` - The AMI name (default value: "glue").
 - `aws_ami_name_prefix` - Prefix for the AMI name (default value: "").
 - `aws_instance_type` - The instance type to use for the build (default value: "m3.medium").
 - `aws_region` - *[required]* The regions were the build will be performed.
@@ -85,7 +85,7 @@ Note: The server IP or hostname cannot be localhost
 ## Versioning
 
 This project uses [SemVer](http://semver.org/) for versioning. For the versions
-available, see the [tags on this repository](https://github.com/fscm/packer-aws-spark/tags).
+available, see the [tags on this repository](https://github.com/jkmart/packer-aws-gluu/tags).
 
 ## Authors
 
