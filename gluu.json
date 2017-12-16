@@ -1,0 +1,67 @@
+{
+  "_copyright": "2017, J. Kerry Martin",
+  "_author":    "J. Kerry Martin <http://github.com/jkmart>",
+  "_license":   "SPDX-License-Identifier: MIT",
+  "variables": {
+    "aws_access_key":       "{{env `aws_access_key`}}",
+    "aws_ami_name":         "gluu",
+    "aws_ami_name_prefix":  "",
+    "aws_instance_type":    "m3.medium",
+    "aws_region":           "{{env `aws_region`}}",
+    "aws_secret_key":       "{{env `aws_secret_key`}}",
+    "aws_ssh_username":     "ubuntu",
+    "gluu_version":         "3.1.1",
+    "os_short_arch":        "x64"
+  },
+  "builders": [{
+    "type":                        "amazon-ebs",
+    "access_key":                  "{{user `aws_access_key`}}",
+    "secret_key":                  "{{user `aws_secret_key`}}",
+    "region":                      "{{user `aws_region`}}",
+    "instance_type":               "{{user `aws_instance_type`}}",
+    "ssh_username":                "{{user `aws_ssh_username`}}",
+    "associate_public_ip_address": true,
+    "ami_name":                    "{{user `aws_ami_name_prefix`}}{{user `aws_ami_name`}}-{{user `gluu_version`}}-({{isotime \"20060102150405\"}})",
+    "source_ami_filter": {
+      "filters": {
+        "virtualization-type": "hvm",
+        "name": "ubuntu*xenial*16.04*",
+        "root-device-type": "ebs"
+      },
+      "owners": ["099720109477"],
+      "most_recent": true
+    }
+  }],
+  "provisioners": [
+    {
+      "type":           "shell",
+      "inline_shebang": "/bin/bash -e",
+      "inline": [
+        "echo === Waiting for Cloud-Init ===",
+        "timeout 180 /bin/bash -c 'until stat /var/lib/cloud/instance/boot-finished &>/dev/null; do echo waiting...; sleep 6; done'",
+        "echo === System Setup ===",
+        "echo \"* soft nofile 65536\" | sudo tee /etc/security/limits.conf > /dev/null",
+        "echo \"* hard nofile 262144\" | sudo tee /etc/security/limits.conf > /dev/null",
+        "echo === System Packages ===",
+        "echo \"deb https://repo.gluu.org/ubuntu/ xenial main\" | sudo tee /etc/apt/sources.list.d/gluu-repo.list > /dev/null",
+        "curl https://repo.gluu.org/ubuntu/gluu-apt.key | sudo apt-key add -",
+        "sudo apt-get update",
+        "sudo apt-get install -y gluu-server-{{user `gluu_version`}}",
+        "echo === System Cleanup ===",
+        "sudo rm /etc/apt/sources.list.d/gluu-repo.list",
+        "sudo rm -f /root/.bash_history",
+        "sudo rm -f /home/{{user `aws_ssh_username`}}/.bash_history",
+        "sudo rm -f /var/log/wtmp",
+        "sudo rm -f /var/log/btmp",
+        "sudo rm -rf /var/log/installer",
+        "sudo rm -rf /var/lib/cloud/instances",
+        "sudo rm -rf /tmp/* /var/tmp/* /tmp/.*-unix",
+        "sudo find /var/cache -type f -delete",
+        "sudo find /var/log -type f | while read f; do echo -n '' | sudo tee $f > /dev/null; done;",
+        "sudo find /var/lib/apt/lists -not -name lock -type f -delete",
+        "sudo sync",
+        "echo === All Done ==="
+      ]
+    }
+  ]
+}
